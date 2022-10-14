@@ -60,7 +60,7 @@ to use ``safedelete.fields.SafeDeleteManyToManyField``.
 it's manager.
 
 Policies Delete Logic Customization
---------
+-----------------------------------
 
 Each of the policies has an overwritable function in case you need to customize a particular policy delete logic. The function per policy are as follows:
 
@@ -80,14 +80,17 @@ Each of the policies has an overwritable function in case you need to customize 
     * - SOFT_DELETE_CASCADE
       - soft_delete_cascade_policy_action    
 
-    Example:
+Example:
+
 To add custom logic before or after the execution of the original delete logic of a model with the policy SOFT_DELETE you can overwrite the ``soft_delete_policy_action`` function as such:
 
 .. code-block:: python
+
     def soft_delete_policy_action(self, **kwargs):
         # Insert here custom pre delete logic
-        super().soft_delete_policy_action(**kwargs)
+        delete_response = super().soft_delete_policy_action(**kwargs)
         # Insert here custom post delete logic
+        return delete_response
 
 
 Fields uniqueness
@@ -96,9 +99,18 @@ Fields uniqueness
 Because unique constraints are set at the database level, set `unique=True` on a field will also check uniqueness against soft deleted objects.
 This can lead to confusion as the soft deleted objects are not visible by the user. This can be solved by setting a partial unique constraint that will only check uniqueness on non-deleted objects:
 
+
 .. code-block:: python
+
     class Post(SafeDeleteModel):
         name = models.CharField(max_length=100)
-
+        
         class Meta:
-            constraints = [UniqueConstraint(fields=['name'], condition=Q(deleted__isnull=True), name='unique_active_name')]
+            constraints = [
+                UniqueConstraint(
+                    fields=['name'],
+                    condition=Q(deleted__isnull=True),
+                    name='unique_active_name'
+                ),
+            ]
+

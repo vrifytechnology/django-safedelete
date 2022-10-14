@@ -1,15 +1,16 @@
 import random
+import unittest
 
 from django.db import models
 from django.db.models.expressions import Exists, OuterRef
 
-from ..config import DELETED_VISIBLE_BY_FIELD
+from ..config import DELETED_VISIBLE_BY_FIELD, HARD_DELETE, NO_DELETE
 from ..managers import SafeDeleteManager
 from ..models import SafeDeleteModel
 from .testcase import SafeDeleteTestCase
 
 
-class OtherModel(models.Model):
+class OtherModel(SafeDeleteModel):
     pass
 
 
@@ -36,6 +37,17 @@ class QuerySetTestCase(SafeDeleteTestCase):
             other=self.other
         )
         self.instance.delete()
+
+    def test_exclude(self):
+        list(OtherModel.objects.exclude(querysetmodel__isnull=True))
+
+    # This fails because exclude instantiate a query without setting
+    # CF Query.split_exclude()
+    @unittest.expectedFailure
+    def test_exclude_deleted(self):
+        pk = self.instance.pk
+        self.instance.delete()
+        self.assertIsNotNone(OtherModel.objects.exclude(querysetmodel__id=pk).first())
 
     def test_select_related(self):
         with self.assertNumQueries(1):
@@ -312,3 +324,40 @@ class QuerySetTestCase(SafeDeleteTestCase):
         )
         self.assertEqual(queryset.count(), 1)
         self.assertFalse(queryset[0].has_related)
+
+    def test_delete_and_undelete_all_output(self):
+        amount = random.randint(1, 4)
+        for _ in range(amount):
+            QuerySetModel.objects.create(other=self.other)
+
+        delete_output = QuerySetModel.objects.all().delete()
+        self.assertEqual(delete_output, (amount, {QuerySetModel._meta.label: amount}))
+
+        delete_output = QuerySetModel.objects.all().delete()
+        self.assertEqual(delete_output, (0, {}))
+
+        undelete_output = QuerySetModel.deleted_objects.all().undelete()
+        # Count for the already created instance
+        self.assertEqual(undelete_output, (amount + 1, {QuerySetModel._meta.label: amount + 1}))
+
+    def test_hard_delete(self):
+        instance = QuerySetModel.objects.create(
+            other=self.other
+        )
+        self.assertEqual(QuerySetModel.objects.all_with_deleted().count(), 2)
+        self.assertEqual(
+            QuerySetModel.objects.all().delete(force_policy=HARD_DELETE),
+            (1, {instance._meta.label: 1})
+        )
+        self.assertEqual(QuerySetModel.objects.all_with_deleted().count(), 1)
+
+    def test_no_delete(self):
+        QuerySetModel.objects.create(
+            other=self.other
+        )
+        self.assertEqual(QuerySetModel.objects.all_with_deleted().count(), 2)
+        self.assertEqual(
+            QuerySetModel.objects.all().delete(force_policy=NO_DELETE),
+            (0, {})
+        )
+        self.assertEqual(QuerySetModel.objects.all_with_deleted().count(), 2)

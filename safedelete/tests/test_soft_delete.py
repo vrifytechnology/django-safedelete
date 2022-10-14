@@ -64,7 +64,7 @@ class SoftDeleteTestCase(SafeDeleteForceTestCase):
 
     def test_softdelete(self):
         """Deleting a model with the soft delete policy should only mask it, not delete it."""
-        self.assertSoftDelete(self.instance)
+        self.assertSoftDelete(self.instance, expected_output=(1, {self.instance._meta.label: 1}))
 
     def test_softdelete_mixin(self):
         """Deprecated: Deleting a SafeDeleteModel model with the soft delete policy should only mask it, not delete it."""
@@ -134,7 +134,7 @@ class SoftDeleteTestCase(SafeDeleteForceTestCase):
 
         SoftDeleteModel.deleted_objects.all().undelete(force_policy=SOFT_DELETE_CASCADE)
         self.assertEqual(SoftDeleteModel.objects.count(), 1)
-        self.assertEqual(SoftDeleteRelatedModel.objects.count(), 1)
+        self.assertEqual(SoftDeleteRelatedModel.objects.count(), 0)
 
     def test_validate_unique(self):
         """Check that uniqueness is also checked against deleted objects """
