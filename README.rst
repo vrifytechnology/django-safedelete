@@ -4,6 +4,9 @@ Django safedelete
 .. image:: https://github.com/makinacorpus/django-safedelete/workflows/Python%20application/badge.svg
     :target: https://github.com/makinacorpus/django-safedelete/actions?query=workflow%3A%22Python+application%22
 
+.. image:: https://img.shields.io/pypi/dm/django-safedelete.svg
+        :target: https://pypi.python.org/pypi/django-safedelete
+
 .. image:: https://coveralls.io/repos/makinacorpus/django-safedelete/badge.png
     :target: https://coveralls.io/r/makinacorpus/django-safedelete
 
@@ -17,11 +20,11 @@ This Django application provides an abstract model, that allows you to transpare
 without having them deleted from your database.
 
 You can choose what happens when you delete an object :
- - it can be masked from your database (soft delete, the default behavior)
- - it can be masked from your database and mask any dependent models. (cascading soft delete)
- - it can be normally deleted (hard delete)
- - it can be hard-deleted, but if its deletion would delete other objects, it will only be masked
- - it can be never deleted or masked from your database (no delete, use with caution)
+ - it can be masked from your database (SOFT_DELETE, the default behavior)
+ - it can be masked from your database and mask any dependent models. (SOFT_DELETE_CASCADE)
+ - it can be normally deleted (HARD_DELETE)
+ - it can be hard-deleted, but if its deletion would delete other objects, it will only be masked (HARD_DELETE_NOCASCADE)
+ - it can be never deleted or masked from your database (NO_DELETE, use with caution)
 
 
 Example
@@ -82,6 +85,7 @@ Current branch (1.3.x) is tested with :
 *  Django 3.2 using python 3.7 to 3.10.
 *  Django 4.0 using python 3.8 to 3.10.
 *  Django 4.1 using python 3.8 to 3.10.
+*  Django 4.2 using python 3.8 to 3.11.
 
 
 Installation
